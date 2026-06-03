@@ -14,23 +14,34 @@ df2.columns = df2.columns.str.strip()
 column_df1 = 'user_prompt'
 column_df2 = 'prompt_query'
 
-if column_df1 in df1.columns:
+# --- ANÁLISE DO DF1 ---
+if column_df1 in df1.columns and 'prompt_hash' in df1.columns:
     unique_total = df1[column_df1].nunique()
-    count_prompts = df1[column_df1].value_counts()
-    #sorting so only lines that have "ranqia_research" in the "brand_name" column are shown
-    #count_prompts = count_prompts[df1.loc[df1['brand_name'].str.contains('ranqia-research'), column_df1].value_counts().index]
+    
+    # Agrupa pelo prompt e pelo hash, gerando uma tabela formatada
+    count_prompts = df1[[column_df1, 'prompt_hash']].value_counts().reset_index(name='count')
+    
     print(f"Unique values in {column_df1}: {unique_total}")
-    print(f"Top prompts in {column_df1}:\n{count_prompts.head(30)}")
+    print(f"Top prompts and hashes in {column_df1}:\n{count_prompts.head(30)}")
+elif column_df1 in df1.columns:
+    print("Atenção: 'prompt_hash' não encontrado no df1. Mostrando apenas os prompts:")
+    print(df1[column_df1].value_counts().head(30))
 else:
-    print(f"Column {column_df1} not found in DataFrame.")
+    print(f"Column {column_df1} not found in DataFrame 1.")
 
-if column_df2 in df2.columns:
+print("-" * 50)
+
+# --- ANÁLISE DO DF2 ---
+if column_df2 in df2.columns and 'prompt_hash' in df2.columns:
     unique_total = df2[column_df2].nunique()
-    count_prompts = df2[column_df2].value_counts()
-    #sorting so only lines that have "ranqia_research" in the "brand_name" column are shown
-    #count_prompts = count_prompts[df2.loc[df2['brand_name'].str.contains('ranqia-research'), column_df2].value_counts().index]
+    
+    # Agrupa pelo prompt e pelo hash, gerando uma tabela formatada
+    count_prompts = df2[[column_df2, 'prompt_hash']].value_counts().reset_index(name='count')
 
-    print(f"Unique values in {column_df2}: {unique_total}")
-    print(f"Top prompts in {column_df2}:\n{count_prompts.head(30)}")
+    print(f"\nUnique values in {column_df2}: {unique_total}")
+    print(f"Top prompts and hashes in {column_df2}:\n{count_prompts.head(30)}")
+elif column_df2 in df2.columns:
+    print("\nAtenção: 'prompt_hash' não encontrado no df2. Mostrando apenas os prompts:")
+    print(df2[column_df2].value_counts().head(30))
 else:
-    print(f"Column {column_df2} not found in DataFrame.")   
+    print(f"Column {column_df2} not found in DataFrame 2.")
