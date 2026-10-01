@@ -25,8 +25,8 @@ prompt_list = ["Quais as melhores empresas de otimização de GEO/SEO no brasil?
                "Quais são as melhores lojas de roupas de frio em São Paulo?",
                "Quais são as melhores empresas de plataformas de marketplaces B2B e B2C no Brasil?"]
 
-url= bingurl
-name_start = bingname
+url= openaiurl
+name_start = openainame
 country = "BR"
 
 for i, prompt_texto in enumerate(prompt_list):
@@ -36,5 +36,5 @@ for i, prompt_texto in enumerate(prompt_list):
         writer = csv.writer(file)
         writer.writerow(headers)
 
-        for n in range(1, 6):
+        for n in range(1, 1001):
             writer.writerow([url, prompt_list[i] + f" [ignorar_id: {n:04d}]", country, n])

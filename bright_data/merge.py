@@ -32,14 +32,15 @@ arquivos_para_processar = [
 # ==========================================
 # 3. FUNÇÕES AUXILIARES DE EXTRAÇÃO E LIMPEZA
 # ==========================================
-def extrair_dominio(url):
-    if not isinstance(url, str): return None
+def extrair_dominio(url) -> str | None:
+    if not isinstance(url, str):
+        return None
     # Limpa http, https, www e remove eventuais barras finais
     limpo = re.sub(r'^(https?://)?(www\.)?', '', url)
     limpo = limpo.split('/')[0]
     return limpo
 
-def extrair_marca_da_url(dominio):
+def extrair_marca_da_url(dominio) -> list:
     if not dominio: 
         return []
     partes = dominio.split('.')
@@ -75,10 +76,10 @@ def processar_lote_bruto(info):
     caminho_arquivo = pasta_dados / info['arquivo']
     
     if not caminho_arquivo.exists():
-        print(f"⏳ A aguardar ficheiro: {info['arquivo']}")
+        print(f"A aguardar ficheiro: {info['arquivo']}")
         return pd.DataFrame()
         
-    print(f"✅ A processar: {info['arquivo']} ({info['source']}) -> Alvo Principal: {info['brand_name']}")
+    print(f"A processar: {info['arquivo']} ({info['source']}) -> Alvo Principal: {info['brand_name']}")
     df = pd.read_csv(caminho_arquivo)
     
     # Cria identificador único para cada teste/sessão
@@ -88,13 +89,17 @@ def processar_lote_bruto(info):
 
     # Iteração sobre cada teste para construir o dossiê de URLs
     for index, row in df.iterrows():
-        
+
         # Carregamento seguro das estruturas JSON
-        try: citations = json.loads(row['citations']) if pd.notnull(row['citations']) else []
-        except: citations = []
-            
-        try: links_attached = json.loads(row['links_attached']) if pd.notnull(row['links_attached']) else []
-        except: links_attached = []
+        try:
+            citations = json.loads(row['citations']) if pd.notnull(row['citations']) else []
+        except (TypeError, ValueError):
+            citations = []
+
+        try:
+            links_attached = json.loads(row['links_attached']) if pd.notnull(row['links_attached']) else []
+        except (TypeError, ValueError):
+            links_attached = []
 
         dominios_map = {}
 
@@ -103,7 +108,8 @@ def processar_lote_bruto(info):
         # -----------------------------------------------------
         for c in citations:
             dominio = extrair_dominio(c.get('url') or c.get('domain'))
-            if not dominio: continue
+            if not dominio:
+                continue
 
             # Regras específicas por Arquitetura de IA:
             if info['source'] in ['GOOGLE_AI', 'OPENAI']:
@@ -117,19 +123,39 @@ def processar_lote_bruto(info):
             else:
                 dominios_map[dominio]['cited_status'] = dominios_map[dominio]['cited_status'] or status_atual
 
+# -----------------------------------------------------
+        # PASSO B: Análise da Interface/Visibilidade (links_attached e sources)
         # -----------------------------------------------------
-        # PASSO B: Análise da Interface/Visibilidade (links_attached)
-        # -----------------------------------------------------
-        for l in links_attached:
-            dominio = extrair_dominio(l.get('url'))
-            if not dominio: continue
+        # 1. Tenta extrair posições do links_attached (Padrão Google/OpenAI)
+        for link in links_attached:
+            dominio = extrair_dominio(link.get('url'))
+            if not dominio:
+                continue
 
             if dominio not in dominios_map:
                 dominios_map[dominio] = {'cited_status': False, 'posicoes': []}
 
-            pos = l.get('position')
+            pos = link.get('position')
             if pos is not None:
-                dominios_map[dominio]['posicoes'].append(pos)
+                dominios_map[dominio]['posicoes'].append(int(pos))
+
+        # 2. Tenta extrair posições da coluna 'sources' (Padrão Perplexity)
+        if info['source'] == 'PERPLEXITY':
+            try:
+                sources_list = json.loads(row['sources']) if pd.notnull(row['sources']) else []
+                for source in sources_list:
+                    dominio = extrair_dominio(source.get('url'))
+                    if not dominio:
+                        continue
+
+                    if dominio not in dominios_map:
+                        dominios_map[dominio] = {'cited_status': True, 'posicoes': []}
+
+                    pos = source.get('position')
+                    if pos is not None:
+                        dominios_map[dominio]['posicoes'].append(int(pos))
+            except (TypeError, ValueError):
+                pass
 
         # -----------------------------------------------------
         # PASSO C & D: Construção do Funil de Avaliação e Conversão (Y)
@@ -195,7 +221,7 @@ if lista_dfs_processados:
     caminho_salvamento = pasta_dados / 'master_dataset_tcc.csv'
     df_master.to_csv(caminho_salvamento, index=False)
     
-    print("\n🚀 Pipeline analítico concluído com sucesso!")
-    print(f"📊 O Master Dataset contém {len(df_master)} registos de domínios consolidados.")
+    print("\nPipeline analítico concluído com sucesso!")
+    print(f"O Master Dataset contém {len(df_master)} registos de domínios consolidados.")
 else:
     print("\nNenhum ficheiro processado. Verifique os nomes e a estrutura dos diretórios.")
