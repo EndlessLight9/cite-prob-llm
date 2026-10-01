@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 path = Path(__file__).parent.parent
-csv_path = path / "perplexity_prompt_test3.csv"
+csv_path = path / "open_ai_prompt_test1.csv"
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -13,12 +13,12 @@ headers = {
 	"Authorization": f"Bearer {os.getenv('BRIGHTDATA_API_KEY')}",
 }
 params = {
-	"dataset_id": os.getenv('DATASET_ID_PERPLEXITY'),
+	"dataset_id": os.getenv('DATASET_ID_OPENAI'),
 	"include_errors": "true",
 }
 files = {"data": ("data.csv", open(csv_path , "rb"), "text/csv")}
 data = {
-	"custom_output_fields": '["url","prompt","citations","timestamp","links_attached","answer_text", "sources"]' #"country", "search_sources"
+	"custom_output_fields": '["url","prompt","citations","timestamp","links_attached","answer_text", "search_sources", "country"]' #"country", "search_sources"
 }
 
 response = requests.post(url, headers=headers, params=params, files=files, data=data)
